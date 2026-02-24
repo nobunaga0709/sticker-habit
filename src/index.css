@@ -1,20 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap');
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+:root {
+  --color-primary: #FF6B9D;
+  --color-primary-light: #FFB3CB;
+  --color-secondary: #C9B1FF;
+  --color-accent: #FFD93D;
+  --color-success: #6BCB77;
+  --color-bg: #FFF0F6;
+  --color-surface: #FFFFFF;
+  --color-text: #2D1B33;
+  --color-text-muted: #7A6280;
+  --color-border: rgba(0,0,0,0.08);
+
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+
+  --border-width: 3px;
+
+  /* Claymorphism shadows */
+  --shadow-clay: 4px 4px 10px rgba(0,0,0,0.12), inset -2px -2px 6px rgba(0,0,0,0.06);
+  --shadow-clay-sm: 3px 3px 8px rgba(0,0,0,0.10), inset -1px -1px 4px rgba(0,0,0,0.05);
+  --shadow-clay-lg: 6px 6px 16px rgba(0,0,0,0.14), inset -3px -3px 8px rgba(0,0,0,0.07);
+  --shadow-pressed: 2px 2px 6px rgba(0,0,0,0.10), inset 2px 2px 6px rgba(0,0,0,0.08);
+}
+
 html, body {
   height: 100%;
-  background: #f0f0f0;
+  background: #e8d5f0;
 }
 
 body {
-  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+  font-family: 'Nunito', 'Hiragino Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #333;
-  line-height: 1.5;
+  color: var(--color-text);
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+h1, h2, h3 {
+  font-family: 'Fredoka', 'Hiragino Sans', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 #root {
@@ -22,32 +57,57 @@ body {
 }
 
 button {
-  font-family: inherit;
+  font-family: 'Nunito', inherit;
+  cursor: pointer;
 }
 
-input {
-  font-family: inherit;
+input, textarea {
+  font-family: 'Nunito', inherit;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 4px;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-primary-light); border-radius: 4px; }
 
+/* Global animations */
 @keyframes popIn {
-  0% { transform: scale(0); opacity: 0; }
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.05); }
   100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes slideUp {
-  0% { transform: translateY(40px); opacity: 0; }
+  0% { transform: translateY(32px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(80px) scale(0.8); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(-80px) scale(1.1); opacity: 0; }
+}
+
+@keyframes softBounce {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.94); }
+  70% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

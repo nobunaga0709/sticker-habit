@@ -25,7 +25,6 @@ export default function CalendarScreen() {
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // Update selected habit when habits change
   const selectedHabit = habits.find(h => h.id === selectedHabitId) ?? habits[0] ?? null;
   const effectiveHabitId = selectedHabit?.id ?? null;
 
@@ -39,144 +38,182 @@ export default function CalendarScreen() {
     ? habitRecords.filter(r => r.habitId === effectiveHabitId)
     : [];
 
-  const recordByDate = Object.fromEntries(
-    recordsForHabit.map(r => [r.date, r])
-  );
+  const recordByDate = Object.fromEntries(recordsForHabit.map(r => [r.date, r]));
 
   const selectedRecord = selectedDate ? recordByDate[selectedDate] : null;
   const selectedSticker = selectedRecord ? STICKER_MAP[selectedRecord.stickerId] : null;
 
-  const monthStats = {
-    achieved: recordsForHabit.filter(r => {
-      const d = new Date(r.date);
-      return d.getMonth() === currentMonth.getMonth() && d.getFullYear() === currentMonth.getFullYear();
-    }).length,
-    daysInMonth: calendarDays.filter(d => isSameMonth(d, currentMonth)).length,
-  };
+  const achievedThisMonth = recordsForHabit.filter(r => {
+    const d = new Date(r.date);
+    return d.getMonth() === currentMonth.getMonth() &&
+           d.getFullYear() === currentMonth.getFullYear();
+  }).length;
+
+  const daysInMonth = calendarDays.filter(d => isSameMonth(d, currentMonth)).length;
+  const achievePct = daysInMonth > 0 ? Math.round((achievedThisMonth / daysInMonth) * 100) : 0;
 
   return (
     <div style={styles.container}>
+      {/* Header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>📅 カレンダー</h1>
+        <h1 style={styles.title}>カレンダー</h1>
       </div>
 
-      {/* Habit Selector */}
+      {/* Habit tabs */}
       {habits.length > 0 ? (
-        <div style={styles.habitTabsWrapper}>
-          <div style={styles.habitTabs}>
-            {habits.map(habit => (
-              <button
-                key={habit.id}
-                onClick={() => {
-                  setSelectedHabitId(habit.id);
-                  setSelectedDate(null);
-                }}
-                style={{
-                  ...styles.habitTab,
-                  background: habit.id === effectiveHabitId ? habit.color : '#fff',
-                  color: habit.id === effectiveHabitId ? '#fff' : '#888',
-                  border: `2px solid ${habit.id === effectiveHabitId ? habit.color : '#e0e0e0'}`,
-                }}
-              >
-                {habit.icon} {habit.name}
-              </button>
-            ))}
+        <div style={styles.tabsWrapper}>
+          <div style={styles.tabs}>
+            {habits.map(habit => {
+              const active = habit.id === effectiveHabitId;
+              return (
+                <button
+                  key={habit.id}
+                  onClick={() => { setSelectedHabitId(habit.id); setSelectedDate(null); }}
+                  style={{
+                    ...styles.tab,
+                    background: active ? habit.color : '#fff',
+                    color: active ? '#fff' : '#7A6280',
+                    border: `3px solid ${active ? habit.color : 'rgba(0,0,0,0.08)'}`,
+                    boxShadow: active
+                      ? `3px 3px 8px ${habit.color}40, inset -1px -1px 4px rgba(0,0,0,0.06)`
+                      : '2px 2px 6px rgba(0,0,0,0.07)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span>{habit.icon}</span>
+                  <span>{habit.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       ) : (
-        <div style={styles.noHabitsMessage}>
-          まず習慣を作ってみよう！
+        <div style={styles.noHabits}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#C9B1FF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+          <p style={{ color: '#B0A0B8', fontWeight: 700, margin: '8px 0 0' }}>まず習慣を作ってみよう！</p>
         </div>
       )}
 
       {selectedHabit && (
         <>
-          {/* Month Navigation */}
+          {/* Month navigation */}
           <div style={styles.monthNav}>
-            <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} style={styles.navBtn}>
-              ‹
+            <button
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              style={styles.navBtn}
+              aria-label="前の月"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A6280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
             </button>
-            <div style={styles.monthTitle}>
-              <span style={styles.monthText}>
+
+            <div style={styles.monthInfo}>
+              <p style={styles.monthText}>
                 {format(currentMonth, 'yyyy年M月', { locale: ja })}
-              </span>
+              </p>
               <span style={{
                 ...styles.monthBadge,
-                background: `${selectedHabit.color}22`,
+                background: `${selectedHabit.color}20`,
                 color: selectedHabit.color,
+                border: `2px solid ${selectedHabit.color}40`,
               }}>
-                {monthStats.achieved}/{monthStats.daysInMonth}日達成
+                {achievedThisMonth}日達成
               </span>
             </div>
-            <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} style={styles.navBtn}>
-              ›
+
+            <button
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              style={styles.navBtn}
+              aria-label="次の月"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A6280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
             </button>
           </div>
 
-          {/* Calendar Grid */}
+          {/* Month progress bar */}
+          <div style={styles.monthProgressWrap}>
+            <div style={styles.monthProgressTrack}>
+              <div style={{
+                ...styles.monthProgressFill,
+                width: `${achievePct}%`,
+                background: `linear-gradient(90deg, ${selectedHabit.color}, ${selectedHabit.color}99)`,
+              }} />
+            </div>
+            <span style={{ fontSize: '11px', color: '#B0A0B8', fontWeight: 600 }}>
+              {daysInMonth}日中 {achievedThisMonth}日 ({achievePct}%)
+            </span>
+          </div>
+
+          {/* Calendar */}
           <div style={styles.calendarCard}>
-            {/* Weekday headers */}
+            {/* Weekday row */}
             <div style={styles.weekdayRow}>
               {WEEKDAYS.map((d, i) => (
                 <div key={d} style={{
                   ...styles.weekdayCell,
-                  color: i === 0 ? '#f44336' : i === 6 ? '#2196f3' : '#888',
+                  color: i === 0 ? '#FF6B9D' : i === 6 ? '#42A5F5' : '#B0A0B8',
                 }}>
                   {d}
                 </div>
               ))}
             </div>
 
-            {/* Day cells */}
+            {/* Days */}
             <div style={styles.daysGrid}>
               {calendarDays.map(day => {
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const record = recordByDate[dateStr];
                 const sticker = record ? STICKER_MAP[record.stickerId] : null;
-                const isCurrentMonth = isSameMonth(day, currentMonth);
-                const isTodayDay = isToday(day);
-                const isSelected = selectedDate === dateStr;
-                const dayOfWeek = day.getDay();
+                const inMonth = isSameMonth(day, currentMonth);
+                const todayDay = isToday(day);
+                const selected = selectedDate === dateStr;
+                const dow = day.getDay();
 
                 return (
                   <button
                     key={dateStr}
-                    onClick={() => {
-                      if (!isCurrentMonth) return;
-                      setSelectedDate(isSelected ? null : dateStr);
-                    }}
+                    onClick={() => { if (!inMonth) return; setSelectedDate(selected ? null : dateStr); }}
+                    aria-label={`${format(day, 'M月d日', { locale: ja })}${sticker ? ` ${sticker.name}` : ''}`}
+                    disabled={!inMonth}
                     style={{
                       ...styles.dayCell,
-                      opacity: isCurrentMonth ? 1 : 0.2,
-                      background: isSelected
-                        ? `${selectedHabit.color}22`
+                      opacity: inMonth ? 1 : 0.15,
+                      background: selected
+                        ? `${selectedHabit.color}20`
                         : sticker
-                        ? `${selectedHabit.color}12`
+                        ? `${selectedHabit.color}10`
                         : 'transparent',
-                      border: isTodayDay
-                        ? `2px solid ${selectedHabit.color}`
-                        : isSelected
-                        ? `2px solid ${selectedHabit.color}88`
-                        : '2px solid transparent',
-                      borderRadius: '12px',
-                      cursor: isCurrentMonth ? 'pointer' : 'default',
+                      border: todayDay
+                        ? `3px solid ${selectedHabit.color}`
+                        : selected
+                        ? `3px solid ${selectedHabit.color}60`
+                        : '3px solid transparent',
+                      boxShadow: selected
+                        ? `inset 2px 2px 6px ${selectedHabit.color}20`
+                        : 'none',
+                      cursor: inMonth ? 'pointer' : 'default',
                     }}
                   >
                     <span style={{
-                      ...styles.dayNumber,
-                      color: isTodayDay
+                      fontSize: '11px',
+                      fontWeight: todayDay ? 800 : 500,
+                      color: todayDay
                         ? selectedHabit.color
-                        : dayOfWeek === 0
-                        ? '#f44336'
-                        : dayOfWeek === 6
-                        ? '#2196f3'
-                        : '#444',
-                      fontWeight: isTodayDay ? 800 : 400,
+                        : dow === 0 ? '#FF6B9D'
+                        : dow === 6 ? '#42A5F5'
+                        : '#2D1B33',
+                      lineHeight: 1,
                     }}>
                       {format(day, 'd')}
                     </span>
                     {sticker && (
-                      <span style={styles.dayStickerEmoji}>{sticker.emoji}</span>
+                      <span style={{ fontSize: '16px', lineHeight: 1 }}>{sticker.emoji}</span>
                     )}
                   </button>
                 );
@@ -189,43 +226,50 @@ export default function CalendarScreen() {
             <div style={{
               ...styles.detailCard,
               borderLeft: `4px solid ${selectedHabit.color}`,
-              background: `${selectedHabit.color}12`,
+              background: `${selectedHabit.color}10`,
+              border: `3px solid ${selectedHabit.color}30`,
+              borderLeftWidth: '4px',
+              animation: 'popIn 0.3s cubic-bezier(0.34,1.56,0.64,1)',
             }}>
-              <div style={styles.detailDate}>
+              <p style={styles.detailDate}>
                 {format(new Date(selectedDate), 'M月d日 (E)', { locale: ja })}
-              </div>
+              </p>
               {selectedSticker ? (
                 <div style={styles.detailContent}>
-                  <span style={styles.detailEmoji}>{selectedSticker.emoji}</span>
+                  <span style={{ fontSize: '44px', lineHeight: 1 }}>{selectedSticker.emoji}</span>
                   <div>
-                    <div style={styles.detailStickerName}>{selectedSticker.name}</div>
-                    <div style={{ fontSize: '12px', color: '#888' }}>
-                      {selectedHabit.name} 達成！ 🎉
-                    </div>
+                    <p style={{ fontWeight: 800, color: '#2D1B33', margin: '0 0 2px', fontSize: '16px' }}>
+                      {selectedSticker.name}
+                    </p>
+                    <p style={{ color: '#7A6280', fontSize: '13px', margin: 0, fontWeight: 600 }}>
+                      {selectedHabit.icon} {selectedHabit.name} 達成！
+                    </p>
                   </div>
                 </div>
               ) : (
-                <div style={{ color: '#aaa', fontSize: '14px' }}>
+                <p style={{ color: '#B0A0B8', fontSize: '14px', fontWeight: 600, margin: 0 }}>
                   この日は未達成です
-                </div>
+                </p>
               )}
             </div>
           )}
 
-          {/* Streak summary */}
-          <div style={styles.summaryRow}>
-            <div style={{ ...styles.summaryCard, borderTop: `3px solid ${selectedHabit.color}` }}>
-              <div style={{ ...styles.summaryNum, color: selectedHabit.color }}>
-                🔥 {selectedHabit.streak}
+          {/* Stats */}
+          <div style={styles.statsRow}>
+            {[
+              { icon: '🔥', num: selectedHabit.streak, label: '連続達成日' },
+              { icon: '✨', num: selectedHabit.totalDays, label: '累計達成日' },
+            ].map(s => (
+              <div key={s.label} style={{
+                ...styles.statCard,
+                borderTop: `4px solid ${selectedHabit.color}`,
+              }}>
+                <p style={{ ...styles.statNum, color: selectedHabit.color }}>
+                  {s.icon} {s.num}
+                </p>
+                <p style={styles.statLabel}>{s.label}</p>
               </div>
-              <div style={styles.summaryLabel}>連続達成</div>
-            </div>
-            <div style={{ ...styles.summaryCard, borderTop: `3px solid ${selectedHabit.color}` }}>
-              <div style={{ ...styles.summaryNum, color: selectedHabit.color }}>
-                ✨ {selectedHabit.totalDays}
-              </div>
-              <div style={styles.summaryLabel}>累計達成</div>
-            </div>
+            ))}
           </div>
         </>
       )}
@@ -235,79 +279,105 @@ export default function CalendarScreen() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    padding: '24px 20px',
+    padding: '28px 20px 24px',
     maxWidth: '480px',
     margin: '0 auto',
-    minHeight: '100vh',
-    background: 'linear-gradient(180deg, #fff8f0 0%, #fef6ff 100%)',
-    fontFamily: '"Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif',
+    minHeight: '100dvh',
+    background: 'linear-gradient(180deg, #FFF8F0 0%, #F5EEFF 100%)',
+    fontFamily: "'Nunito', sans-serif",
   },
   header: { marginBottom: '16px' },
-  title: { fontSize: '24px', fontWeight: 700, margin: 0, color: '#333' },
-  habitTabsWrapper: {
-    overflowX: 'auto',
-    marginBottom: '16px',
-    paddingBottom: '4px',
-  },
-  habitTabs: {
-    display: 'flex',
-    gap: '8px',
-    width: 'max-content',
-  },
-  habitTab: {
-    padding: '8px 16px',
-    borderRadius: '20px',
-    fontSize: '13px',
+  title: {
+    fontSize: '28px',
+    fontFamily: "'Fredoka', sans-serif",
     fontWeight: 600,
-    cursor: 'pointer',
+    color: '#2D1B33',
+  },
+  tabsWrapper: { overflowX: 'auto', marginBottom: '16px', paddingBottom: '4px' },
+  tabs: { display: 'flex', gap: '8px', width: 'max-content' },
+  tab: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 16px',
+    borderRadius: '9999px',
+    fontSize: '13px',
+    fontWeight: 700,
+    fontFamily: "'Nunito', sans-serif",
     whiteSpace: 'nowrap',
     transition: 'all 0.2s ease',
+    minHeight: '44px',
   },
-  noHabitsMessage: {
+  noHabits: {
     textAlign: 'center',
-    color: '#bbb',
-    padding: '24px',
+    padding: '28px',
     background: '#fff',
-    borderRadius: '16px',
+    borderRadius: '20px',
+    border: '3px solid rgba(201,177,255,0.2)',
     marginBottom: '16px',
+    boxShadow: '3px 3px 8px rgba(0,0,0,0.06)',
   },
   monthNav: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: '12px',
+    marginBottom: '10px',
   },
   navBtn: {
     background: '#fff',
-    border: '1px solid #e0e0e0',
-    borderRadius: '10px',
-    width: '36px',
-    height: '36px',
-    fontSize: '20px',
+    border: '3px solid rgba(0,0,0,0.08)',
+    borderRadius: '12px',
+    width: '40px',
+    height: '40px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#666',
+    boxShadow: '3px 3px 8px rgba(0,0,0,0.08), inset -1px -1px 3px rgba(0,0,0,0.04)',
+    transition: 'transform 0.15s ease',
   },
-  monthTitle: {
+  monthInfo: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: '4px',
   },
-  monthText: { fontSize: '16px', fontWeight: 700, color: '#333' },
+  monthText: {
+    fontSize: '17px',
+    fontFamily: "'Fredoka', sans-serif",
+    fontWeight: 600,
+    color: '#2D1B33',
+    margin: 0,
+  },
   monthBadge: {
     fontSize: '12px',
-    fontWeight: 600,
-    padding: '2px 10px',
-    borderRadius: '10px',
+    fontWeight: 700,
+    padding: '2px 12px',
+    borderRadius: '9999px',
+  },
+  monthProgressWrap: {
+    marginBottom: '12px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  monthProgressTrack: {
+    height: '6px',
+    background: 'rgba(0,0,0,0.06)',
+    borderRadius: '9999px',
+    overflow: 'hidden',
+  },
+  monthProgressFill: {
+    height: '100%',
+    borderRadius: '9999px',
+    transition: 'width 0.6s ease',
   },
   calendarCard: {
     background: '#fff',
-    borderRadius: '20px',
+    borderRadius: '24px',
     padding: '16px',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+    border: '3px solid rgba(0,0,0,0.06)',
+    boxShadow: '4px 4px 16px rgba(0,0,0,0.08), inset -2px -2px 6px rgba(0,0,0,0.03)',
     marginBottom: '16px',
   },
   weekdayRow: {
@@ -317,14 +387,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   weekdayCell: {
     textAlign: 'center',
-    fontSize: '12px',
-    fontWeight: 600,
+    fontSize: '11px',
+    fontWeight: 800,
     padding: '4px 0',
+    letterSpacing: '0.5px',
   },
   daysGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(7, 1fr)',
-    gap: '4px',
+    gap: '3px',
   },
   dayCell: {
     aspectRatio: '1',
@@ -332,50 +403,48 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '2px',
-    cursor: 'pointer',
+    padding: '1px',
+    borderRadius: '10px',
     transition: 'all 0.15s ease',
-    background: 'none',
-  },
-  dayNumber: {
-    fontSize: '12px',
-    lineHeight: 1.2,
-  },
-  dayStickerEmoji: {
-    fontSize: '18px',
-    lineHeight: 1,
+    gap: '1px',
   },
   detailCard: {
-    borderRadius: '16px',
+    borderRadius: '20px',
     padding: '16px',
     marginBottom: '16px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    boxShadow: '3px 3px 8px rgba(0,0,0,0.07)',
   },
   detailDate: {
-    fontSize: '14px',
-    fontWeight: 700,
-    color: '#555',
-    marginBottom: '8px',
+    fontSize: '13px',
+    fontWeight: 800,
+    color: '#7A6280',
+    margin: '0 0 10px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
   detailContent: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '14px',
   },
-  detailEmoji: { fontSize: '40px' },
-  detailStickerName: { fontSize: '16px', fontWeight: 700, color: '#333' },
-  summaryRow: {
+  statsRow: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '12px',
   },
-  summaryCard: {
+  statCard: {
     background: '#fff',
-    borderRadius: '16px',
-    padding: '16px',
+    borderRadius: '20px',
+    padding: '18px 16px',
     textAlign: 'center',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+    border: '3px solid rgba(0,0,0,0.06)',
+    boxShadow: '4px 4px 12px rgba(0,0,0,0.07), inset -2px -2px 6px rgba(0,0,0,0.03)',
   },
-  summaryNum: { fontSize: '28px', fontWeight: 800, marginBottom: '4px' },
-  summaryLabel: { fontSize: '12px', color: '#888' },
+  statNum: {
+    fontSize: '28px',
+    fontFamily: "'Fredoka', sans-serif",
+    fontWeight: 600,
+    margin: '0 0 4px',
+  },
+  statLabel: { fontSize: '12px', color: '#B0A0B8', fontWeight: 700, margin: 0 },
 };
