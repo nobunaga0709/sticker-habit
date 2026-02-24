@@ -4,7 +4,7 @@ import { STICKER_MAP, PRESET_STICKERS } from '../data/presetStickers';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
-type FilterType = 'all' | 'unused' | 'used';
+type FilterType = 'all' | 'normal' | 'rare' | 'superRare';
 
 const RARITY_LABEL: Record<string, string> = {
   normal: 'N',
@@ -18,15 +18,21 @@ const RARITY_BADGE_STYLE: Record<string, React.CSSProperties> = {
   superRare: { background: 'linear-gradient(135deg, #FFD93D, #FF6B9D)', color: '#fff' },
 };
 
+const FILTER_LABELS: Record<FilterType, string> = {
+  all: 'すべて',
+  normal: 'ノーマル',
+  rare: 'レア',
+  superRare: 'SR',
+};
+
 export default function StickerBookScreen() {
   const { userStickers } = useAppStore();
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const filtered = userStickers.filter(us => {
-    if (filter === 'unused') return !us.isUsed;
-    if (filter === 'used') return us.isUsed;
-    return true;
+    if (filter === 'all') return true;
+    return STICKER_MAP[us.stickerId]?.rarity === filter;
   });
 
   const selectedUS = selectedId ? userStickers.find(us => us.id === selectedId) : null;
@@ -34,8 +40,6 @@ export default function StickerBookScreen() {
 
   const stats = {
     total: userStickers.length,
-    unused: userStickers.filter(us => !us.isUsed).length,
-    used: userStickers.filter(us => us.isUsed).length,
     unique: new Set(userStickers.map(us => us.stickerId)).size,
   };
 
@@ -53,9 +57,9 @@ export default function StickerBookScreen() {
       {/* Stats bar */}
       <div style={styles.statsBar}>
         {[
-          { label: '所持', value: stats.total, color: '#FF6B9D' },
-          { label: '未使用', value: stats.unused, color: '#6BCB77' },
-          { label: '使用済', value: stats.used, color: '#B0A0B8' },
+          { label: '所持枚数', value: stats.total, color: '#FF6B9D' },
+          { label: '種類', value: stats.unique, color: '#C9B1FF' },
+          { label: '残り', value: PRESET_STICKERS.length - stats.unique, color: '#B0A0B8' },
         ].map(s => (
           <div key={s.label} style={styles.statBox}>
             <span style={{ ...styles.statNum, color: s.color }}>{s.value}</span>
@@ -66,7 +70,7 @@ export default function StickerBookScreen() {
 
       {/* Filter tabs */}
       <div style={styles.filterRow}>
-        {(['all', 'unused', 'used'] as FilterType[]).map(f => {
+        {(['all', 'normal', 'rare', 'superRare'] as FilterType[]).map(f => {
           const active = filter === f;
           return (
             <button
@@ -82,9 +86,7 @@ export default function StickerBookScreen() {
                   : '3px 3px 8px rgba(0,0,0,0.06), inset -1px -1px 3px rgba(0,0,0,0.03)',
               }}
             >
-              {f === 'all' ? `すべて (${stats.total})` :
-               f === 'unused' ? `未使用 (${stats.unused})` :
-               `使用済み (${stats.used})`}
+              {FILTER_LABELS[f]}
             </button>
           );
         })}
@@ -110,9 +112,7 @@ export default function StickerBookScreen() {
             <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           <p style={{ color: '#7A6280', fontWeight: 700, margin: 0 }}>
-            {filter === 'all' ? 'ガチャを回してシールを集めよう！' :
-             filter === 'unused' ? '未使用のシールはありません' :
-             '使用済みのシールはありません'}
+            {filter === 'all' ? 'ガチャを回してシールを集めよう！' : `${FILTER_LABELS[filter]}のシールはまだありません`}
           </p>
         </div>
       ) : (
@@ -125,7 +125,7 @@ export default function StickerBookScreen() {
               <button
                 key={us.id}
                 onClick={() => setSelectedId(selected ? null : us.id)}
-                aria-label={`${sticker.name} ${us.isUsed ? '使用済み' : '未使用'}`}
+                aria-label={sticker.name}
                 style={{
                   ...styles.stickerCard,
                   background: sticker.color,
@@ -135,7 +135,6 @@ export default function StickerBookScreen() {
                   boxShadow: selected
                     ? '4px 4px 12px rgba(255,107,157,0.35), inset -2px -2px 6px rgba(0,0,0,0.06)'
                     : '3px 3px 8px rgba(0,0,0,0.10), inset -1px -1px 4px rgba(0,0,0,0.05)',
-                  opacity: us.isUsed ? 0.65 : 1,
                   transform: selected ? 'scale(1.04)' : 'scale(1)',
                   cursor: 'pointer',
                 }}
@@ -145,13 +144,6 @@ export default function StickerBookScreen() {
                 <span style={{ ...styles.rarityDot, ...RARITY_BADGE_STYLE[sticker.rarity] }}>
                   {RARITY_LABEL[sticker.rarity]}
                 </span>
-                {us.isUsed && (
-                  <div style={styles.usedOverlay}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </div>
-                )}
               </button>
             );
           })}

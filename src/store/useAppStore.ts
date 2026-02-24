@@ -67,15 +67,18 @@ export const useAppStore = create<AppStore>()(
       drawGachaTicket: () => {
         const { gachaTicket, userStickers } = get();
         if (gachaTicket.count <= 0) return null;
-        
-        const sticker = drawGacha();
+
+        const ownedIds = [...new Set(userStickers.map(us => us.stickerId))];
+        const sticker = drawGacha(ownedIds);
+        if (!sticker) return null; // all collected
+
         const userSticker: UserSticker = {
           id: `us-${Date.now()}`,
           stickerId: sticker.id,
           acquiredAt: new Date().toISOString(),
           isUsed: false,
         };
-        
+
         set({
           userStickers: [...userStickers, userSticker],
           gachaTicket: {
@@ -83,7 +86,7 @@ export const useAppStore = create<AppStore>()(
             lastReceivedAt: new Date().toISOString(),
           },
         });
-        
+
         return userSticker;
       },
 
@@ -126,9 +129,6 @@ export const useAppStore = create<AppStore>()(
             habits: state.habits.map(h =>
               h.id === habitId ? { ...h, streak, totalDays } : h
             ),
-            userStickers: state.userStickers.map(us =>
-              us.id === userStickerId ? { ...us, isUsed: true } : us
-            ),
           };
         });
       },
@@ -146,7 +146,7 @@ export const useAppStore = create<AppStore>()(
       },
 
       getAvailableStickers: () => {
-        return get().userStickers.filter(us => !us.isUsed);
+        return get().userStickers;
       },
 
       markStickerAsUsed: (userStickerId) => {

@@ -35,14 +35,18 @@ const RARITY_CARD: Record<string, React.CSSProperties> = {
 };
 
 export default function GachaScreen() {
-  const { gachaTicket, drawGachaTicket, canDrawGacha } = useAppStore();
+  const { gachaTicket, drawGachaTicket, canDrawGacha, userStickers } = useAppStore();
   const [result, setResult] = useState<UserSticker | null>(null);
   const [animating, setAnimating] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [pressing, setPressing] = useState(false);
 
+  const totalStickers = 21; // PRESET_STICKERS.length
+  const ownedCount = new Set(userStickers.map(us => us.stickerId)).size;
+  const isComplete = ownedCount >= totalStickers;
+
   const handleGacha = () => {
-    if (!canDrawGacha() || animating) return;
+    if (!canDrawGacha() || animating || isComplete) return;
     setShowResult(false);
     setAnimating(true);
 
@@ -55,7 +59,7 @@ export default function GachaScreen() {
   };
 
   const resultSticker = result ? STICKER_MAP[result.stickerId] : null;
-  const canDraw = canDrawGacha();
+  const canDraw = canDrawGacha() && !isComplete;
 
   return (
     <div style={styles.container}>
@@ -144,7 +148,7 @@ export default function GachaScreen() {
                   </svg>
                   まわってる...
                 </span>
-              ) : canDraw ? 'ガチャを回す！' : 'チケットなし'}
+              ) : isComplete ? 'コンプリート！' : canDraw ? 'ガチャを回す！' : 'チケットなし'}
             </button>
           </div>
 
@@ -169,8 +173,17 @@ export default function GachaScreen() {
         </div>
       )}
 
+      {/* Complete message */}
+      {isComplete && !animating && (
+        <div style={{ ...styles.emptyCard, borderColor: '#FFD93D', background: 'linear-gradient(145deg, #FFF9E6, #FFE0F0)' }}>
+          <div style={{ fontSize: '48px', marginBottom: 8 }}>🏆</div>
+          <p style={{ fontWeight: 800, color: '#FF6B9D', fontSize: '18px', margin: '0 0 4px', fontFamily: "'Fredoka', sans-serif" }}>コンプリート！</p>
+          <p style={{ fontSize: '13px', color: '#B0A0B8', margin: 0 }}>全{totalStickers}種類のシールを集めたよ！</p>
+        </div>
+      )}
+
       {/* No ticket message */}
-      {!canDraw && !animating && !showResult && (
+      {!canDraw && !isComplete && !animating && !showResult && (
         <div style={styles.emptyCard}>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C9B1FF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>

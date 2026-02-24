@@ -35,7 +35,13 @@ export const RARITY_WEIGHTS = {
   superRare: 5, // 5%
 };
 
-export function drawGacha(): Sticker {
+export function drawGacha(ownedStickerIds: string[] = []): Sticker | null {
+  const ownedSet = new Set(ownedStickerIds);
+  const unowned = PRESET_STICKERS.filter(s => !ownedSet.has(s.id));
+
+  // All stickers collected
+  if (unowned.length === 0) return null;
+
   const rand = Math.random() * 100;
   let rarity: 'normal' | 'rare' | 'superRare';
   if (rand < RARITY_WEIGHTS.normal) {
@@ -45,6 +51,9 @@ export function drawGacha(): Sticker {
   } else {
     rarity = 'superRare';
   }
-  const pool = PRESET_STICKERS.filter(s => s.rarity === rarity);
+
+  // Try the rolled rarity first; if all owned, pick from any unowned sticker
+  const rarityPool = unowned.filter(s => s.rarity === rarity);
+  const pool = rarityPool.length > 0 ? rarityPool : unowned;
   return pool[Math.floor(Math.random() * pool.length)];
 }
