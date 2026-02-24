@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { STICKER_MAP, PRESET_STICKERS } from '../data/presetStickers';
 import { format } from 'date-fns';
@@ -30,18 +30,23 @@ export default function StickerBookScreen() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const filtered = userStickers.filter(us => {
-    if (filter === 'all') return true;
-    return STICKER_MAP[us.stickerId]?.rarity === filter;
-  });
+  // filterまたはuserStickersが変化したときのみ再計算 (rerender-memo)
+  const filtered = useMemo(
+    () => userStickers.filter(us => {
+      if (filter === 'all') return true;
+      return STICKER_MAP[us.stickerId]?.rarity === filter;
+    }),
+    [userStickers, filter]
+  );
 
   const selectedUS = selectedId ? userStickers.find(us => us.id === selectedId) : null;
   const selectedSticker = selectedUS ? STICKER_MAP[selectedUS.stickerId] : null;
 
-  const stats = {
+  // userStickersが変化したときのみSet再計算 (rerender-memo)
+  const stats = useMemo(() => ({
     total: userStickers.length,
     unique: new Set(userStickers.map(us => us.stickerId)).size,
-  };
+  }), [userStickers]);
 
   return (
     <div style={styles.container}>

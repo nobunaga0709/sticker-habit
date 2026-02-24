@@ -7,14 +7,16 @@ import { useAppStore } from './store/useAppStore';
 
 type Tab = 'gacha' | 'stickers' | 'habits' | 'calendar';
 
+type IconProps = { active: boolean };
+
 // SVG icons (Lucide-style, 24x24 viewBox)
-const GachaIcon = ({ active }: { active: boolean }) => (
+const GachaIcon = ({ active }: IconProps) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#FF6B9D' : '#B0A0B8'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
   </svg>
 );
 
-const StickerIcon = ({ active }: { active: boolean }) => (
+const StickerIcon = ({ active }: IconProps) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#FF6B9D' : '#B0A0B8'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
@@ -23,14 +25,14 @@ const StickerIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
-const HabitIcon = ({ active }: { active: boolean }) => (
+const HabitIcon = ({ active }: IconProps) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#FF6B9D' : '#B0A0B8'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
     <polyline points="22 4 12 14.01 9 11.01"/>
   </svg>
 );
 
-const CalendarIcon = ({ active }: { active: boolean }) => (
+const CalendarIcon = ({ active }: IconProps) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#FF6B9D' : '#B0A0B8'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
     <line x1="16" y1="2" x2="16" y2="6"/>
@@ -39,11 +41,12 @@ const CalendarIcon = ({ active }: { active: boolean }) => (
   </svg>
 );
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: 'gacha', label: 'ガチャ' },
-  { id: 'stickers', label: 'シール帳' },
-  { id: 'habits', label: '習慣' },
-  { id: 'calendar', label: 'カレンダー' },
+// Iconをコンフィグに含めることで、mapコールバック内での配列生成を回避 (rendering-hoist-jsx)
+const TABS: { id: Tab; label: string; Icon: React.FC<IconProps> }[] = [
+  { id: 'gacha', label: 'ガチャ', Icon: GachaIcon },
+  { id: 'stickers', label: 'シール帳', Icon: StickerIcon },
+  { id: 'habits', label: '習慣', Icon: HabitIcon },
+  { id: 'calendar', label: 'カレンダー', Icon: CalendarIcon },
 ];
 
 function DailyTicketManager() {
@@ -85,10 +88,9 @@ export default function App() {
       </div>
 
       <nav style={styles.nav} role="navigation" aria-label="メインナビゲーション">
-        {TABS.map((tab, i) => {
+        {TABS.map((tab) => {
           const active = activeTab === tab.id;
-          const icons = [GachaIcon, StickerIcon, HabitIcon, CalendarIcon];
-          const Icon = icons[i];
+          const { Icon } = tab;
           return (
             <button
               key={tab.id}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { STICKER_MAP } from '../data/presetStickers';
 import type { UserSticker } from '../types';
@@ -42,7 +42,11 @@ export default function GachaScreen() {
   const [pressing, setPressing] = useState(false);
 
   const totalStickers = 21; // PRESET_STICKERS.length
-  const ownedCount = new Set(userStickers.map(us => us.stickerId)).size;
+  // userStickersが変化したときのみSet再計算 (rerender-memo)
+  const ownedCount = useMemo(
+    () => new Set(userStickers.map(us => us.stickerId)).size,
+    [userStickers]
+  );
   const isComplete = ownedCount >= totalStickers;
 
   const handleGacha = () => {

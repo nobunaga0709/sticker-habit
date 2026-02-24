@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { STICKER_MAP } from '../data/presetStickers';
 import {
@@ -28,28 +28,46 @@ export default function CalendarScreen() {
   const selectedHabit = habits.find(h => h.id === selectedHabitId) ?? habits[0] ?? null;
   const effectiveHabitId = selectedHabit?.id ?? null;
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  // eachDayOfIntervalは35〜42個のDateオブジェクトを生成するためメモ化 (rerender-memo)
+  const { calendarDays, daysInMonth } = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+    const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+    return {
+      calendarDays: days,
+      daysInMonth: days.filter(d => isSameMonth(d, currentMonth)).length,
+    };
+  }, [currentMonth]);
 
-  const recordsForHabit = effectiveHabitId
-    ? habitRecords.filter(r => r.habitId === effectiveHabitId)
-    : [];
+  // habitRecordsまたはeffectiveHabitIdが変化したときのみ再計算 (rerender-derived-state-no-effect)
+  const recordsForHabit = useMemo(
+    () => effectiveHabitId
+      ? habitRecords.filter(r => r.habitId === effectiveHabitId)
+      : [],
+    [habitRecords, effectiveHabitId]
+  );
 
-  const recordByDate = Object.fromEntries(recordsForHabit.map(r => [r.date, r]));
+  // O(1)ルックアップのためのMapをメモ化 (js-index-maps)
+  const recordByDate = useMemo(
+    () => Object.fromEntries(recordsForHabit.map(r => [r.date, r])),
+    [recordsForHabit]
+  );
 
   const selectedRecord = selectedDate ? recordByDate[selectedDate] : null;
   const selectedSticker = selectedRecord ? STICKER_MAP[selectedRecord.stickerId] : null;
 
-  const achievedThisMonth = recordsForHabit.filter(r => {
-    const d = new Date(r.date);
-    return d.getMonth() === currentMonth.getMonth() &&
-           d.getFullYear() === currentMonth.getFullYear();
-  }).length;
+  // recordsForHabitまたはcurrentMonthが変化したときのみ再計算
+  const achievedThisMonth = useMemo(
+    () => recordsForHabit.filter(r => {
+      const d = new Date(r.date);
+      return d.getMonth() === currentMonth.getMonth() &&
+             d.getFullYear() === currentMonth.getFullYear();
+    }).length,
+    [recordsForHabit, currentMonth]
+  );
 
-  const daysInMonth = calendarDays.filter(d => isSameMonth(d, currentMonth)).length;
   const achievePct = daysInMonth > 0 ? Math.round((achievedThisMonth / daysInMonth) * 100) : 0;
 
   return (

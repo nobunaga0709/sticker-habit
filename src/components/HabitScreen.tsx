@@ -174,6 +174,10 @@ export default function HabitScreen() {
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
+  // JSX内IIFEを避け、変数として事前計算 (rerender-derived-state-no-effect)
+  const doneCount = habits.filter(h => hasRecordToday(h.id)).length;
+  const progressPct = habits.length > 0 ? Math.round((doneCount / habits.length) * 100) : 0;
+
   const handleAchieve = (habitId: string) => {
     if (hasRecordToday(habitId)) return;
     setPickingForHabit(habitId);
@@ -200,30 +204,26 @@ export default function HabitScreen() {
       </div>
 
       {/* Today's progress */}
-      {habits.length > 0 && (() => {
-        const doneCount = habits.filter(h => hasRecordToday(h.id)).length;
-        const pct = Math.round((doneCount / habits.length) * 100);
-        return (
-          <div style={styles.progressCard}>
-            <div style={styles.progressTop}>
-              <span style={styles.progressText}>今日の達成</span>
-              <span style={styles.progressFraction}>
-                <span style={{ color: '#FF6B9D', fontWeight: 800 }}>{doneCount}</span>
-                <span style={{ color: '#B0A0B8' }}> / {habits.length}</span>
-              </span>
-            </div>
-            <div style={styles.progressTrack}>
-              <div style={{
-                ...styles.progressFill,
-                width: `${pct}%`,
-                background: pct === 100
-                  ? 'linear-gradient(90deg, #6BCB77, #42A5F5)'
-                  : 'linear-gradient(90deg, #FF6B9D, #C9B1FF)',
-              }} />
-            </div>
+      {habits.length > 0 && (
+        <div style={styles.progressCard}>
+          <div style={styles.progressTop}>
+            <span style={styles.progressText}>今日の達成</span>
+            <span style={styles.progressFraction}>
+              <span style={{ color: '#FF6B9D', fontWeight: 800 }}>{doneCount}</span>
+              <span style={{ color: '#B0A0B8' }}> / {habits.length}</span>
+            </span>
           </div>
-        );
-      })()}
+          <div style={styles.progressTrack}>
+            <div style={{
+              ...styles.progressFill,
+              width: `${progressPct}%`,
+              background: progressPct === 100
+                ? 'linear-gradient(90deg, #6BCB77, #42A5F5)'
+                : 'linear-gradient(90deg, #FF6B9D, #C9B1FF)',
+            }} />
+          </div>
+        </div>
+      )}
 
       {/* Habit list */}
       {habits.length === 0 ? (

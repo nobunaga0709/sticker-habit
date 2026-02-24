@@ -36,7 +36,7 @@ function calculateStreak(records: HabitRecord[], habitId: string): number {
   if (dates.length === 0) return 0;
   
   let streak = 0;
-  let current = new Date();
+  const current = new Date();
   
   for (const dateStr of dates) {
     const recordDate = format(current, 'yyyy-MM-dd');
